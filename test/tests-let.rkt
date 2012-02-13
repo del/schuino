@@ -1,6 +1,6 @@
 #lang racket
 (require rackunit
-         "passes.rkt")
+         "../passes.rkt")
 (require rackunit/text-ui)
 
 (define let-tests
