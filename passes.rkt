@@ -2,8 +2,16 @@
 (provide syn-walk
          let-expand
          if-expand
-         cond-expand)
+         cond-expand
+         explicit-defined-lambdas
+         free
+         substitute
+         closure-convert
+         transform/bottom-up
+         transform/top-down)
 
+; Helper functions for walking the syntax tree and
+; applying a transformation pass to it
 (define (syn-walk syn pass)
   (let ([datum (maybe-syntax->datum syn)])
     (cond
@@ -13,18 +21,36 @@
                                          (syn-walk (rest datum) pass)))))]
       [else (maybe-syntax->datum (pass datum))])))
 
+(define (maybe-syntax->datum syn)
+  (if (syntax? syn)
+      (syntax->datum syn)
+      syn))
+
+;;;=============================================================================
+;;; Compiler passes
+;;;=============================================================================
+
+;;;-----------------------------------------------------------------------------
+;;; Let expand pass
+;;;-----------------------------------------------------------------------------
 (define (let-expand exp)
   (syntax-case exp ()
     [(let ((i v) ...) e1 e2 ...)
      (syntax ((lambda (i ...) e1 e2 ...) v ...))]
+
     [exp (syntax exp)]))
 
+;;;-----------------------------------------------------------------------------
+;;; If and cond expansion pass
+;;;-----------------------------------------------------------------------------
 (define (if-expand exp)
     (match exp
       [(cons 'cond cond-clauses)
        (cond-expand cond-clauses)]
+
       [(list 'if test-expr then-expr)
        (list 'if test-expr then-expr #f)]
+
       [other-exp other-exp]))
 
 (define (cond-expand clauses)
